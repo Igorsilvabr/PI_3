@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clínica Formosão - Sistema Integrado</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #DDE2F0; }
+    .sidebar-bg { background-color: #050C33; }
+    .btn-sidebar {
+      background-color: #CBD5E1; color: #050C33;
+      transition: all 0.2s; border-radius: 0.75rem;
+      font-weight: 800; text-transform: uppercase; font-size: 0.85rem;
+    }
+    .btn-sidebar:hover { background-color: #E2E8F0; }
+    .btn-sidebar.active { background-color: #E2E8F0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+    .white-panel { background-color: white; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .input-custom {
+      background-color: #DDE2F0; border-radius: 1rem; border: none;
+      padding: 0.75rem 1.25rem; font-weight: 600; color: #050C33; outline: none;
+    }
+    .input-custom:focus { box-shadow: 0 0 0 2px #A5B4FC; }
+    .btn-marinho { background-color: #050C33; color: white; border-radius: 1rem; font-weight: 800; transition: background 0.3s; }
+    .btn-marinho:hover { background-color: #1e1b4b; }
+    .btn-lavanda { background-color: #A5B4FC; color: #050C33; border-radius: 1rem; font-weight: 800; transition: background 0.3s; }
+    .btn-lavanda:hover { background-color: #818cf8; }
+    .btn-add { background-color: #050C33; color: white; border-radius: 0.75rem; font-weight: 800; transition: background 0.3s; }
+    .btn-add:hover { background-color: #1e1b4b; }
+    .logo-container {
+      width: 180px; height: 180px; border-radius: 1.5rem;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; background-color: rgba(255,255,255,0.03);
+      margin-bottom: 2rem; position: relative;
+    }
+    #modalFicha, #modalAddPaciente, #modalAddTutor, #modalAddVet, #modalAddServico, #modalAddAgendamento {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(5,12,51,0.6); backdrop-filter: blur(4px);
+      z-index: 50; align-items: center; justify-content: center;
+    }
+    .modal-content { width: 90%; max-width: 900px; max-height: 85vh; overflow-y: auto; }
+    .tab-btn {
+      padding: 1rem; font-weight: 800; font-size: 0.75rem;
+      text-transform: uppercase; color: #94A3B8; border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active { color: #050C33; border-bottom-color: #050C33; }
+    .content-section { display: none; }
+    .content-section.active { display: block; animation: fadeIn 0.3s ease; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .initials-circle {
+      width: 64px; height: 64px; background-color: #050C33; color: white;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 1.25rem; margin: 0 auto 1rem; text-transform: uppercase;
+    }
+    .status-select {
+      appearance: none; padding: 0.25rem 2rem 0.25rem 1rem;
+      border-radius: 9999px; font-size: 0.65rem; font-weight: 900;
+      text-transform: uppercase; cursor: pointer; border: none; outline: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='4' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 0.75rem;
+    }
+    .agenda-card { transition: border-color 0.3s ease; }
+    .status-agendado   { background-color: #DBEAFE; color: #1E40AF; border-left-color: #3B82F6 !important; }
+    .status-aguardando { background-color: #FEF3C7; color: #92400E; border-left-color: #F59E0B !important; }
+    .status-finalizado { background-color: #D1FAE5; color: #065F46; border-left-color: #10B981 !important; }
+    .status-cancelado  { background-color: #FEE2E2; color: #991B1B; border-left-color: #EF4444 !important; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+ 
+  <aside class="sidebar-bg w-64 flex flex-col py-10 items-center border-r border-indigo-900/30 shadow-2xl z-10">
+    <div class="logo-container">
+        <img src="/static/logo.png" alt="Logo Formosão" class="w-full h-full p-2 object-contain">
+    </div>
+    <nav class="w-full px-6 space-y-4">
+      <button onclick="showSection('pacientes')" id="btn-pacientes" class="btn-sidebar active w-full py-3 px-4 text-left flex items-center gap-2">Pacientes</button>
+      <button onclick="showSection('tutores')"   id="btn-tutores"   class="btn-sidebar w-full py-3 px-4 text-left flex items-center gap-2">Tutores</button>
+      <button onclick="showSection('vets')"      id="btn-vets"      class="btn-sidebar w-full py-3 px-4 text-left flex items-center gap-2">Corpo Clínico</button>
+      <button onclick="showSection('servicos')"  id="btn-servicos"  class="btn-sidebar w-full py-3 px-4 text-left flex items-center gap-2">Serviços</button>
+      <button onclick="showSection('agenda')"    id="btn-agenda"    class="btn-sidebar w-full py-3 px-4 text-left flex items-center gap-2">Agenda</button>
+      <button onclick="showSection('resultados')" id="btn-resultados" class="btn-sidebar w-full py-3 px-4 text-left flex items-center gap-2">Dashboards</button>
+    </nav>
+  </aside>
+ 
+  <main class="flex-1 overflow-y-auto p-10 relative">
+ 
+    <section id="pacientes" class="content-section active">
+      <div class="flex justify-between items-center mb-10">
+        <h2 class="text-2xl font-black text-black uppercase">Painel de Pacientes</h2>
+        <button onclick="openModal('modalAddPaciente')" class="btn-add px-6 py-3 text-sm flex items-center shadow-lg">
+          <span class="mr-2 text-lg">+</span> Adicionar Paciente
+        </button>
+      </div>
+      <div class="white-panel p-8 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+          <div class="col-span-1 md:col-span-2">
+            <label class="block text-sm font-black mb-3 ml-2 uppercase text-slate-700">Buscar por Nome</label>
+            <input type="text" id="buscaNome" placeholder="Nome do animal..." class="input-custom w-full h-12">
+          </div>
+          <div>
+            <label class="block text-sm font-black mb-3 ml-2 uppercase text-slate-700">Filtrar por Espécie</label>
+            <select id="buscaEspecie" class="input-custom w-full h-12">
+              <option value="">Todas as espécies...</option>
+              <option value="Cão">Cão</option>
+              <option value="Gato">Gato</option>
+              <option value="Ave">Ave</option>
+              <option value="Roedor">Roedor</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="flex gap-3 h-12">
+            <button onclick="filtrarPacientes()" class="btn-marinho flex-1 uppercase text-xs tracking-widest shadow-md">Filtrar</button>
+            <button onclick="limparFiltros()"    class="btn-lavanda flex-1 uppercase text-xs tracking-widest shadow-md">Limpar</button>
+          </div>
+        </div>
+      </div>
+      <div class="white-panel overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-slate-50 border-b border-slate-100">
+            <tr>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase">Paciente</th>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase">Espécie (Raça)</th>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase">Sexo</th>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase">Tutor</th>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-pacientes" class="divide-y divide-slate-50"></tbody>
+        </table>
+      </div>
+    </section>
+ 
+    <section id="tutores" class="content-section">
+      <div class="flex justify-between items-center mb-10">
+        <h2 class="text-2xl font-black text-black uppercase">Gestão de Tutores</h2>
+        <button onclick="openModal('modalAddTutor')" class="btn-add px-6 py-3 text-sm">+ Novo Tutor</button>
+      </div>
+      <div id="grid-tutores" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </section>
+ 
+    <section id="vets" class="content-section">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-black text-black uppercase">Equipe Médica</h2>
+        <button onclick="openModal('modalAddVet')" class="btn-add px-6 py-3 text-sm">+ Novo Veterinário</button>
+      </div>
+      <div id="grid-vets" class="grid grid-cols-1 md:grid-cols-4 gap-6"></div>
+    </section>
+ 
+    <section id="servicos" class="content-section">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-black text-black uppercase">Tabela de Serviços</h2>
+        <button onclick="openModal('modalAddServico')" class="btn-add px-6 py-3 text-sm">+ Novo Serviço</button>
+      </div>
+      <div class="white-panel overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase">Serviço</th>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase">Categoria</th>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase">Valor</th>
+              <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-servicos" class="divide-y divide-slate-50"></tbody>
+        </table>
+      </div>
+    </section>
+ 
+    <section id="agenda" class="content-section">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-black text-black uppercase">Agenda Diária</h2>
+        <button onclick="openModal('modalAddAgendamento')" class="btn-add px-6 py-3 text-sm shadow-lg">+ Novo Agendamento</button>
+      </div>
+      <div class="grid grid-cols-1 gap-4" id="agenda-container"></div>
+    </section>
+ 
+    <section id="resultados" class="content-section">
+      <h2 class="text-2xl font-black text-black mb-8 uppercase">Indicadores de Desempenho</h2>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <div class="white-panel p-6 border-b-4 border-indigo-900">
+          <p class="text-[10px] font-black text-slate-400 uppercase">Valor Recebido</p>
+          <h3 id="dashFaturamento" class="text-3xl font-black text-indigo-950">R$ 0,00</h3>
+        </div>
+        <div class="white-panel p-6 border-b-4 border-indigo-900">
+          <p class="text-[10px] font-black text-slate-400 uppercase">Consultas</p>
+          <h3 id="dashAtendimentos" class="text-3xl font-black text-indigo-950">0</h3>
+        </div>
+        <div class="white-panel p-6 border-b-4 border-indigo-900">
+          <p class="text-[10px] font-black text-slate-400 uppercase">Total de Animais</p>
+          <h3 id="dashAnimais" class="text-3xl font-black text-indigo-950">0</h3>
+        </div>
+        <div class="white-panel p-6 border-b-4 border-indigo-900">
+          <p class="text-[10px] font-black text-slate-400 uppercase">Total de Tutores</p>
+          <h3 id="dashTutores" class="text-3xl font-black text-indigo-950">0</h3>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="white-panel p-8">
+          <h4 class="text-xs font-black text-slate-400 uppercase mb-6 text-center tracking-widest">Evolução da Agenda</h4>
+          <div class="h-64"><canvas id="chartArea"></canvas></div>
+        </div>
+        <div class="white-panel p-8">
+          <h4 class="text-xs font-black text-slate-400 uppercase mb-6 text-center tracking-widest">Distribuição por Espécie</h4>
+          <div class="h-64 flex justify-center"><canvas id="chartDonut"></canvas></div>
+        </div>
+      </div>
+    </section>
+  </main>
+ 
+  <div id="modalFicha" onclick="closeFicha(event)">
+    <div class="modal-content white-panel p-0 flex flex-col" onclick="event.stopPropagation()">
+      <div class="bg-slate-900 p-8 text-white flex justify-between items-center rounded-t-[1.5rem]">
+        <div>
+          <h3 id="modalNomePet" class="text-3xl font-black uppercase">Nome do Pet</h3>
+          <p id="modalInfoPet" class="text-xs font-bold text-white/60 tracking-widest uppercase">Espécie | Tutor</p>
+        </div>
+        <button onclick="document.getElementById('modalFicha').style.display='none'" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex border-b border-slate-100 px-8">
+        <button onclick="showTab('prontuario')" id="tab-prontuario" class="tab-btn active">Prontuário</button>
+        <button onclick="showTab('vacinas')"    id="tab-vacinas"    class="tab-btn">Vacinas</button>
+        <button onclick="showTab('historico')"  id="tab-historico"  class="tab-btn">Histórico</button>
+      </div>
+      <div class="p-8">
+        <input type="hidden" id="modalIdPet">
+        
+        <div id="panel-prontuario" class="tab-panel active space-y-6">
+          <textarea id="notasProntuario" class="input-custom w-full h-32 resize-none" placeholder="Notas do atendimento..."></textarea>
+          <button onclick="atualizarProntuario()" class="btn-marinho w-full py-4 uppercase tracking-widest text-sm">Atualizar</button>
+        </div>
+        <div id="panel-vacinas"   class="tab-panel space-y-4"><p class="text-sm font-bold text-slate-400">Dados de vacinação...</p></div>
+        <div id="panel-historico" class="tab-panel space-y-4"><p class="text-sm font-bold text-slate-400">Histórico do paciente...</p></div>
+      </div>
+    </div>
+  </div>
+ 
+  <div id="modalAddPaciente">
+    <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+      <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-black uppercase text-slate-800 tracking-tight modal-titulo">Novo Paciente</h2>
+        <button onclick="closeModal('modalAddPaciente')" class="text-slate-400 hover:text-red-500 font-bold text-2xl transition">&times;</button>
+      </div>
+      <form onsubmit="salvarDados(event, '/animais/', 'modalAddPaciente', carregarPacientes)">
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Nome do Pet</label>
+            <input type="text" name="nome" required class="input-custom w-full">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Espécie</label>
+              <select name="especie" id="petEspecie" required onchange="atualizarSelectRacas()" class="input-custom w-full">
+                <option value="">Selecione...</option>
+                <option value="Cão">Cão</option>
+                <option value="Gato">Gato</option>
+                <option value="Ave">Ave</option>
+                <option value="Roedor">Roedor</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Raça</label>
+              <select name="raca" id="petRaca" required class="input-custom w-full">
+                <option value="">Escolha a espécie primeiro...</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Sexo</label>
+              <select name="sexo" required class="input-custom w-full">
+                <option value="">Selecione...</option>
+                <option value="Macho">Macho</option>
+                <option value="Fêmea">Fêmea</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Idade (Anos)</label>
+              <input type="number" name="idade" required class="input-custom w-full">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Tutor responsável</label>
+            <select id="pacienteTutor" name="dono" required class="input-custom w-full">
+              <option value="">Selecione o Tutor...</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-8 flex justify-end gap-4">
+          <button type="button" onclick="closeModal('modalAddPaciente')" class="btn-lavanda px-6 py-3 text-sm uppercase tracking-widest">Cancelar</button>
+          <button type="submit" class="btn-marinho px-6 py-3 text-sm uppercase tracking-widest">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+ 
+  <div id="modalAddTutor">
+    <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+      <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-black uppercase text-slate-800 tracking-tight modal-titulo">Novo Tutor</h2>
+        <button onclick="closeModal('modalAddTutor')" class="text-slate-400 hover:text-red-500 font-bold text-2xl transition">&times;</button>
+      </div>
+      <form onsubmit="salvarDados(event, '/tutores/', 'modalAddTutor', carregarTutores)">
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Nome Completo</label>
+            <input type="text" name="nome" required class="input-custom w-full">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Telefone / WhatsApp</label>
+            <input type="text" name="telefone" required class="input-custom w-full">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Pets (Opcional)</label>
+            <input type="text" name="pets" class="input-custom w-full" value="Nenhum">
+          </div>
+        </div>
+        <div class="mt-8 flex justify-end gap-4">
+          <button type="button" onclick="closeModal('modalAddTutor')" class="btn-lavanda px-6 py-3 text-sm uppercase tracking-widest">Cancelar</button>
+          <button type="submit" class="btn-marinho px-6 py-3 text-sm uppercase tracking-widest">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+ 
+  <div id="modalAddVet">
+    <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+      <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-black uppercase text-slate-800 tracking-tight modal-titulo">Novo Médico</h2>
+        <button onclick="closeModal('modalAddVet')" class="text-slate-400 hover:text-red-500 font-bold text-2xl transition">&times;</button>
+      </div>
+      <form onsubmit="salvarDados(event, '/veterinarios/', 'modalAddVet', carregarVets)">
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Nome do Médico</label>
+            <input type="text" name="nome" placeholder="Ex: Dr. Ricardo" required class="input-custom w-full">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Especialidade</label>
+            <input type="text" name="especialidade" required class="input-custom w-full">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Telefone</label>
+            <input type="text" name="telefone" required class="input-custom w-full">
+          </div>
+        </div>
+        <div class="mt-8 flex justify-end gap-4">
+          <button type="button" onclick="closeModal('modalAddVet')" class="btn-lavanda px-6 py-3 text-sm uppercase tracking-widest">Cancelar</button>
+          <button type="submit" class="btn-marinho px-6 py-3 text-sm uppercase tracking-widest">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+ 
+  <div id="modalAddServico">
+    <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+      <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-black uppercase text-slate-800 tracking-tight modal-titulo">Novo Serviço</h2>
+        <button onclick="closeModal('modalAddServico')" class="text-slate-400 hover:text-red-500 font-bold text-2xl transition">&times;</button>
+      </div>
+      <form onsubmit="salvarDados(event, '/servicos/', 'modalAddServico', carregarServicos)">
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Nome do Serviço</label>
+            <input type="text" name="nome" placeholder="Ex: Consulta Geral" required class="input-custom w-full">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Categoria</label>
+            <input type="text" name="categoria" placeholder="Ex: Clínica" required class="input-custom w-full">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Valor (R$)</label>
+            <input type="number" step="0.01" name="valor" required class="input-custom w-full">
+          </div>
+        </div>
+        <div class="mt-8 flex justify-end gap-4">
+          <button type="button" onclick="closeModal('modalAddServico')" class="btn-lavanda px-6 py-3 text-sm uppercase tracking-widest">Cancelar</button>
+          <button type="submit" class="btn-marinho px-6 py-3 text-sm uppercase tracking-widest">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+ 
+  <div id="modalAddAgendamento">
+    <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+      <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-black uppercase text-slate-800 tracking-tight">Novo Agendamento</h2>
+        <button onclick="closeModal('modalAddAgendamento')" class="text-slate-400 hover:text-red-500 font-bold text-2xl transition">&times;</button>
+      </div>
+      <form onsubmit="salvarDados(event, '/agendamentos/', 'modalAddAgendamento', carregarAgenda)">
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Horário</label>
+            <input type="time" name="horario" required class="input-custom w-full">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Paciente (Pet)</label>
+            <select id="agendamentoPaciente" name="nome_pet" required class="input-custom w-full">
+              <option value="">Selecione o Paciente...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Motivo / Serviço</label>
+            <select id="agendamentoMotivo" name="motivo" required class="input-custom w-full">
+              <option value="">Selecione um Serviço...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Veterinário</label>
+            <select id="agendamentoVet" name="veterinario" required class="input-custom w-full">
+              <option value="">Selecione o Profissional...</option>
+            </select>
+          </div>
+          <input type="hidden" name="status" value="agendado">
+        </div>
+        <div class="mt-8 flex justify-end gap-4">
+          <button type="button" onclick="closeModal('modalAddAgendamento')" class="btn-lavanda px-6 py-3 text-sm uppercase tracking-widest">Cancelar</button>
+          <button type="submit" class="btn-marinho px-6 py-3 text-sm uppercase tracking-widest">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+ 
+ <script>
+    // ── DICIONÁRIO DE RAÇAS PREDEFINIDAS ──────────────────────
+    const baseRacas = {
+      "Cão": ["Vira-lata (SRD)", "Poodle", "Labrador", "Golden Retriever", "Pastor Alemão", "Bulldog", "Chihuahua", "Pinscher", "Shih Tzu", "Yorkshire", "Outra Raça"],
+      "Gato": ["Semedo (SRD)", "Persa", "Siamês", "Maine Coon", "Angorá", "Sphynx", "Bengal", "Outra Raça"],
+      "Ave": ["Calopsita", "Papagaio", "Canário", "Periquito", "Agapornis", "Outra"],
+      "Roedor": ["Hamster", "Porquinho da Índia", "Chinchila", "Coelho", "Outro"],
+      "Outro": ["Não Especificado"]
+    };
+ 
+    function atualizarSelectRacas(racaPreSelecionada = "") {
+      const especie = document.getElementById('petEspecie').value;
+      const selectRaca = document.getElementById('petRaca');
+      if (!especie || !baseRacas[especie]) {
+        selectRaca.innerHTML = '<option value="">Escolha a espécie primeiro...</option>';
+        return;
+      }
+      selectRaca.innerHTML = baseRacas[especie].map(r => `<option value="${r}">${r}</option>`).join('');
+      if (racaPreSelecionada) {
+        selectRaca.value = racaPreSelecionada;
+      }
+    }
+ 
+    // ── NAVEGAÇÃO DE TELAS E ABAS ──────────────────────────────
+    function showSection(sectionId) {
+      document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.btn-sidebar').forEach(btn => btn.classList.remove('active'));
+      
+      const targetSection = document.getElementById(sectionId);
+      const targetButton = document.getElementById('btn-' + sectionId);
+      
+      if (targetSection) targetSection.classList.add('active');
+      if (targetButton) targetButton.classList.add('active');
+ 
+      if (sectionId === 'resultados') {
+        renderizarDashboard();
+      }
+    }
+ 
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.getElementById('panel-' + tabId).classList.add('active');
+    }
+ 
+    // ── MODAL WINDOW CONTROLLERS ──────────────────────────────
+    function openModal(id) {
+      document.getElementById(id).style.display = 'flex';
+      if (id === 'modalAddPaciente') {
+        carregarSelectTutores();
+      }
+      if (id === 'modalAddAgendamento') {
+        carregarSelectsAgendamento();
+      }
+    }
+ 
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+      const form = document.querySelector(`#${id} form`);
+      if (form) form.reset();
+    }
+ 
+    // ── VARIÁVEIS GLOBAIS DE CONTROLE DE GRÁFICOS ──────────────
+    let instanceChartArea = null;
+    let instanceChartDonut = null;
+    let dadosLocaisPacientes = [];
+ 
+    // ── REQUISIÇÕES DA API (GET & POST) ───────────────────────
+    async function apiFetch(endpoint) {
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error('Falha na rede');
+        return await response.json();
+      } catch (e) {
+        console.error(`Erro ao consumir endpoint [${endpoint}]:`, e);
+        return null;
+      }
+    }
+ 
+    // FUNÇÃO ATUALIZADA: Mapeia dados dinamicamente do HTML para o formato do SQLAlchemy (Evita Erro 422)
+    async function salvarDados(event, url, modalId, callbackAtualizacao) {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      let payload = Object.fromEntries(formData.entries());
+ 
+      // Conversões e compatibilidades para o módulo de Animais/Pacientes
+      if (url.includes('/animais/')) {
+          if (payload.petEspecie) payload.especie = payload.petEspecie;
+          if (payload.petRaca) payload.raca = payload.petRaca;
+          if (payload.petSexo) payload.sexo = payload.petSexo;
+          if (payload.pacienteTutor) payload.dono = payload.pacienteTutor;
+      }
+
+      if (payload.idade) payload.idade = parseInt(payload.idade) || 0;
+      if (payload.valor) payload.valor = parseFloat(payload.valor) || 0.0;
+ 
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          closeModal(modalId);
+          if (callbackAtualizacao) callbackAtualizacao();
+        } else {
+          const err = await res.json();
+          alert("Erro ao processar: " + (err.detail || "Verifique os campos obrigatórios."));
+        }
+      } catch (e) {
+        console.error("Erro na requisição POST:", e);
+      }
+    }
+ 
+    // ── CARREGAMENTO DE DROPDOWNS DINÂMICOS ───────────────────
+    async function carregarSelectTutores() {
+      const tutores = await apiFetch('/tutores/');
+      const select = document.getElementById('pacienteTutor');
+      if (tutores && select) {
+        select.innerHTML = '<option value="">Selecione o Tutor...</option>' +
+          tutores.map(t => `<option value="${t.nome}">${t.nome}</option>`).join('');
+      }
+    }
+ 
+    async function carregarSelectsAgendamento() {
+      const [pacientes, servicos, vets] = await Promise.all([
+        apiFetch('/animais/'),
+        apiFetch('/servicos/'),
+        apiFetch('/veterinarios/')
+      ]);
+ 
+      const selectPacientes = document.getElementById('agendamentoPaciente');
+      if (selectPacientes && pacientes) {
+        selectPacientes.innerHTML = '<option value="">Selecione o Paciente...</option>' +
+          pacientes.map(p => `<option value="${p.nome}">${p.nome}</option>`).join('');
+      }
+ 
+      const selectMotivos = document.getElementById('agendamentoMotivo');
+      if (selectMotivos && servicos) {
+        selectMotivos.innerHTML = '<option value="">Selecione um Serviço...</option>' +
+          servicos.map(s => `<option value="${s.nome}" data-valor="${s.valor}">${s.nome} (R$ ${s.valor.toFixed(2)})</option>`).join('');
+      }
+ 
+      const selectVets = document.getElementById('agendamentoVet');
+      if (selectVets && vets) {
+        selectVets.innerHTML = '<option value="">Selecione o Profissional...</option>' +
+          vets.map(v => `<option value="${v.nome}">${v.nome}</option>`).join('');
+      }
+    }
+ 
+    // ── PREENCHIMENTO E RENDERIZAÇÃO DE TABELAS ────────────────
+    async function carregarPacientes() {
+      const dados = await apiFetch('/animais/');
+      if (!dados) return;
+      dadosLocaisPacientes = dados;
+      renderizarTabelaPacientes(dadosLocaisPacientes);
+    }
+ 
+    function renderizarTabelaPacientes(lista) {
+      const tbody = document.getElementById('tabela-pacientes');
+      if (!tbody) return;
+      tbody.innerHTML = lista.map(p => `
+        <tr class="hover:bg-slate-50/80 transition cursor-pointer" onclick="openFicha(${p.id})">
+          <td class="px-8 py-5 font-black text-indigo-950">${p.nome}</td>
+          <td class="px-8 py-5 text-sm text-slate-600 font-medium">${p.especie} <span class="text-xs text-slate-400">(${p.raca || 'SRD'})</span></td>
+          <td class="px-8 py-5 text-sm font-bold text-slate-500">${p.sexo || 'Não informado'}</td>
+          <td class="px-8 py-5 text-sm font-semibold text-slate-700">${p.dono}</td>
+          <td class="px-8 py-5 text-center" onclick="event.stopPropagation()">
+            <button onclick="deletarItem('/animais/${p.id}', carregarPacientes)" class="text-red-400 hover:text-red-600 font-bold text-xs uppercase tracking-wider">Remover</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+ 
+    function filtrarPacientes() {
+      const busca = document.getElementById('buscaNome').value.toLowerCase();
+      const especie = document.getElementById('buscaEspecie').value;
+      const filtrados = dadosLocaisPacientes.filter(p => {
+        const bateNome = p.nome.toLowerCase().includes(busca);
+        const bateEspecie = especie === "" || p.especie === especie;
+        return bateNome && bateEspecie;
+      });
+      renderizarTabelaPacientes(filtrados);
+    }
+ 
+    function limparFiltros() {
+      document.getElementById('buscaNome').value = "";
+      document.getElementById('buscaEspecie').value = "";
+      renderizarTabelaPacientes(dadosLocaisPacientes);
+    }
+ 
+    async function carregarTutores() {
+      const tutores = await apiFetch('/tutores/');
+      const grid = document.getElementById('grid-tutores');
+      if (!grid || !tutores) return;
+      grid.innerHTML = tutores.map(t => `
+        <div class="white-panel p-6 flex flex-col justify-between border border-slate-100 relative">
+          <div>
+            <div class="initials-circle">${t.nome.substring(0,2)}</div>
+            <h4 class="text-lg font-black text-center text-indigo-950 uppercase tracking-tight mb-1">${t.nome}</h4>
+            <p class="text-xs text-center text-slate-400 font-bold mb-4">${t.telefone}</p>
+            <div class="border-t border-slate-50 pt-4 space-y-2">
+              <p class="text-xs font-medium text-slate-500"><span class="font-black text-slate-400 uppercase text-[9px] block">Pets Vinculados</span> ${t.pets || 'Nenhum'}</p>
+            </div>
+          </div>
+          <button onclick="deletarItem('/tutores/${t.id}', carregarTutores)" class="mt-6 text-center text-xs font-bold text-red-400 hover:text-red-600 uppercase tracking-widest">Excluir Cadastro</button>
+        </div>
+      `).join('');
+    }
+ 
+    async function carregarVets() {
+      const vets = await apiFetch('/veterinarios/');
+      const grid = document.getElementById('grid-vets');
+      if (!grid || !vets) return;
+      grid.innerHTML = vets.map(v => `
+        <div class="white-panel p-6 text-center border border-slate-100">
+          <div class="w-16 h-16 bg-indigo-50 text-indigo-900 rounded-full flex items-center justify-center font-black mx-auto mb-4 text-xl">V</div>
+          <h4 class="font-black text-indigo-950 uppercase text-md mb-1">${v.nome}</h4>
+          <p class="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3">${v.especialidade}</p>
+          <p class="text-xs font-semibold text-slate-400 mb-4">${v.telefone}</p>
+          <button onclick="deletarItem('/veterinarios/${v.id}', carregarVets)" class="text-xs font-bold text-red-400 hover:text-red-600 uppercase tracking-wider">Remover</button>
+        </div>
+      `).join('');
+    }
+ 
+    async function carregarServicos() {
+      const servicos = await apiFetch('/servicos/');
+      const tbody = document.getElementById('tabela-servicos');
+      if (!tbody || !servicos) return;
+      tbody.innerHTML = servicos.map(s => `
+        <tr>
+          <td class="px-8 py-4 font-black text-indigo-950 uppercase text-sm">${s.nome}</td>
+          <td class="px-8 py-4 text-slate-500 font-bold text-xs uppercase tracking-wider">${s.categoria}</td>
+          <td class="px-8 py-4 font-black text-slate-700">R$ ${s.valor.toFixed(2)}</td>
+          <td class="px-8 py-4 text-center">
+            <button onclick="deletarItem('/servicos/${s.id}', carregarServicos)" class="text-red-400 hover:text-red-600 text-xs font-bold uppercase">Excluir</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+ 
+    async function carregarAgenda() {
+      const agenda = await apiFetch('/agendamentos/');
+      const container = document.getElementById('agenda-container');
+      if (!container || !agenda) return;
+      
+      container.innerHTML = agenda.map(a => `
+        <div class="white-panel p-5 flex flex-col md:flex-row justify-between items-center agenda-card border-l-8 status-${a.status || 'agendado'}">
+          <div class="flex items-center gap-6 w-full md:w-auto">
+            <div class="text-xl font-black text-indigo-950 bg-slate-100/80 px-4 py-2 rounded-xl border border-slate-200">${a.horario}</div>
+            <div>
+              <h4 class="font-black text-lg text-indigo-950 uppercase">${a.nome_pet}</h4>
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">${a.motivo} ── <span class="text-indigo-900">Dr(a). ${a.veterinario}</span></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 mt-4 md:mt-0 w-full md:w-auto justify-end">
+            <select onchange="atualizarStatusAgenda(${a.id}, this.value)" class="status-select status-${a.status || 'agendado'}">
+              <option value="agendado" ${a.status==='agendado'?'selected':''}>Agendado</option>
+              <option value="aguardando" ${a.status==='aguardando'?'selected':''}>Aguardando</option>
+              <option value="finalizado" ${a.status==='finalizado'?'selected':''}>Finalizado</option>
+              <option value="cancelado" ${a.status==='cancelado'?'selected':''}>Cancelado</option>
+            </select>
+            <button onclick="deletarItem('/agendamentos/${a.id}', carregarAgenda)" class="text-slate-300 hover:text-red-500 transition p-2">&times;</button>
+          </div>
+        </div>
+      `).join('');
+    }
+ 
+    async function atualizarStatusAgenda(id, novoStatus) {
+      try {
+        await fetch(`/agendamentos/${id}/status?status=${novoStatus}`, { method: 'PUT' });
+        carregarAgenda();
+      } catch (e) {
+        console.error("Falha ao modificar status do agendamento:", e);
+      }
+    }
+ 
+    async function deletarItem(url, callbackSucesso) {
+      if (!confirm("Tem certeza que deseja remover este item permanentemente do sistema?")) return;
+      try {
+        const res = await fetch(url, { method: 'DELETE' });
+        if (res.ok) callbackSucesso();
+      } catch (e) {
+        console.error("Erro ao remover item:", e);
+      }
+    }
+ 
+    // ── FICHA CLÍNICA & HISTÓRICO DO ANIMAL ───────────────────
+    async function openFicha(petId) {
+      const pet = await apiFetch(`/animais/${petId}`);
+      if (!pet) return;
+ 
+      document.getElementById('modalIdPet').value = pet.id;
+      document.getElementById('modalNomePet').innerText = pet.nome;
+      document.getElementById('modalInfoPet').innerText = `${pet.especie} (${pet.raca || 'SRD'}) ── Tutor: ${pet.dono}`;
+      document.getElementById('notasProntuario').value = pet.prontuario || "";
+      
+      showTab('prontuario');
+      document.getElementById('modalFicha').style.display = 'flex';
+    }
+ 
+    function closeFicha(e) {
+      if (e.target.id === 'modalFicha') {
+        document.getElementById('modalFicha').style.display = 'none';
+      }
+    }
+ 
+    async function atualizarProntuario() {
+      const id = document.getElementById('modalIdPet').value;
+      const texto = document.getElementById('notasProntuario').value;
+      try {
+        const res = await fetch(`/animais/${id}/prontuario?prontuario=${encodeURIComponent(texto)}`, { method: 'PUT' });
+        if (res.ok) {
+          alert("Prontuário updated com sucesso!");
+          document.getElementById('modalFicha').style.display = 'none';
+          carregarPacientes();
+        }
+      } catch (e) {
+        console.error("Erro ao injetar dados no prontuário:", e);
+      }
+    }
+ 
+    // ── MOTOR E PROCESSADOR DE METRICAS (DASHBOARD) ───────────
+    async function renderizarDashboard() {
+      try {
+        const [animais, tutores, agenda, servicos] = await Promise.all([
+          apiFetch('/animais/') || [],
+          apiFetch('/tutores/') || [],
+          apiFetch('/agendamentos/') || [],
+          apiFetch('/servicos/') || []
+        ]);
+ 
+        // 1. Atualização dos Cards Numéricos Estáticos
+        document.getElementById('dashAnimais').innerText = animais ? animais.length : 0;
+        document.getElementById('dashTutores').innerText = tutores ? tutores.length : 0;
+        document.getElementById('dashAtendimentos').innerText = agenda ? agenda.filter(a => a.status === 'finalizado').length : 0;
+ 
+        // 2. Mapeamento Inteligente de Faturamento
+        let faturamentoTotal = 0;
+        if (agenda && servicos) {
+          agenda.forEach(ag => {
+            if (ag.status === 'finalizado') {
+              const correspondente = servicos.find(s => s.nome.toLowerCase() === ag.motivo.toLowerCase());
+              if (correspondente) {
+                faturamentoTotal += correspondente.valor;
+              } else {
+                faturamentoTotal += 150.00; // Fallback padrão caso o serviço tenha sido excluído
+              }
+            }
+          });
+        }
+        document.getElementById('dashFaturamento').innerText = `R$ ${faturamentoTotal.toFixed(2).replace('.', ',')}`;
+ 
+        // 3. Processamento de dados para o Gráfico de Rosca (Espécies)
+        const contagemEspecies = {};
+        if (animais) {
+          animais.forEach(a => {
+            if(a.especie) {
+                contagemEspecies[a.especie] = (contagemEspecies[a.especie] || 0) + 1;
+            }
+          });
+        }
+ 
+        // Limpeza preventiva de gráficos anteriores
+        if (instanceChartArea) instanceChartArea.destroy();
+        if (instanceChartDonut) instanceChartDonut.destroy();
+ 
+        // 4. Renderização do Gráfico de Área (Evolução de Agenda)
+        const ctxArea = document.getElementById('chartArea').getContext('2d');
+        instanceChartArea = new Chart(ctxArea, {
+          type: 'line',
+          data: {
+            labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Atual'],
+            datasets: [{
+              label: 'Consultas Marcadas',
+              data: [agenda ? Math.max(0, agenda.length - 3) : 0, 2, 5, 4, agenda ? agenda.length : 0],
+              borderColor: '#050C33',
+              backgroundColor: 'rgba(5, 12, 51, 0.06)',
+              fill: true,
+              tension: 0.35
+            }]
+          },
+          options: {
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+ 
+        // 5. Renderização do Gráfico Donut (Distribuição)
+        const ctxDonut = document.getElementById('chartDonut').getContext('2d');
+        const labelsDonut = Object.keys(contagemEspecies).length > 0 ? Object.keys(contagemEspecies) : ['Nenhum Pet'];
+        const dataDonut = Object.values(contagemEspecies).length > 0 ? Object.values(contagemEspecies) : [0];
+ 
+        instanceChartDonut = new Chart(ctxDonut, {
+          type: 'doughnut',
+          data: {
+            labels: labelsDonut,
+            datasets: [{
+              data: dataDonut,
+              backgroundColor: ['#050C33', '#4338CA', '#94A3B8', '#CBD5E1', '#F1F5F9'],
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }]
+          },
+          options: {
+            cutout: '72%',
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { weight: 700 } } } }
+          }
+        });
+ 
+      } catch (err) {
+        console.error("Falha ao computar dados da dashboard gráfica:", err);
+      }
+    }
+ 
+    // ── INICIALIZAÇÃO DA SESSÃO WINDOW ────────────────────────
+    window.onload = () => {
+      showSection('pacientes');
+      carregarPacientes();
+      carregarTutores();
+      carregarVets();
+      carregarServicos();
+      carregarAgenda();
+    };
+</script>
+</body>
+</html>

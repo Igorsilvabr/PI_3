@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formosão Clínica - Cadastrar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #034eb1; 
+            overflow-x: hidden;
+        }
+
+        .font-logo {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Formas orgânicas com animação de movimento líquido */
+        .blob-bg {
+            position: absolute;
+            z-index: 0;
+            pointer-events: none;
+            transition: all 1s ease-in-out;
+        }
+
+        /* Forma Azul Claro (Esquerda) */
+        .blob-1 {
+            top: -5%;
+            left: -10%;
+            width: 75%;
+            height: 75%;
+            background-color: #88baf4;
+            animation: morphAndFloat1 12s ease-in-out infinite alternate;
+        }
+
+        /* Forma Lilás/Rosa (Direita/Baixo) */
+        .blob-2 {
+            bottom: -15%;
+            left: 5%;
+            width: 70%;
+            height: 70%;
+            background-color: #9299f0;
+            animation: morphAndFloat2 15s ease-in-out infinite alternate;
+        }
+
+        @keyframes morphAndFloat1 {
+            0% {
+                border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+                transform: rotate(-10deg) translate(0px, 0px) scale(1);
+            }
+            50% {
+                border-radius: 70% 30% 52% 48% / 60% 40% 60% 40%;
+                transform: rotate(5deg) translate(20px, -15px) scale(1.05);
+            }
+            100% {
+                border-radius: 48% 52% 40% 60% / 40% 60% 40% 60%;
+                transform: rotate(-5deg) translate(-10px, 15px) scale(0.95);
+            }
+        }
+
+        @keyframes morphAndFloat2 {
+            0% {
+                border-radius: 41% 59% 43% 57% / 41% 33% 67% 59%;
+                transform: rotate(0deg) translate(0px, 0px) scale(1);
+            }
+            50% {
+                border-radius: 55% 45% 65% 35% / 50% 60% 40% 50%;
+                transform: rotate(15deg) translate(-15px, 20px) scale(1.08);
+            }
+            100% {
+                border-radius: 45% 55% 40% 60% / 60% 45% 55% 40%;
+                transform: rotate(-10deg) translate(15px, -10px) scale(0.95);
+            }
+        }
+
+        /* Estilização dos inputs em formato pílula */
+        .input-field {
+            background-color: #9cc0f4;
+            color: #050c33;
+            transition: all 0.2s;
+        }
+        
+        .input-field:focus {
+            outline: 3px solid #dfccff;
+            background-color: #b2cefc;
+        }
+
+        .input-field.error {
+            outline: 3px solid #f87171;
+            background-color: #fca5a5;
+        }
+        
+        /* Animação leve de flutuação para o Gato */
+        .pet-container {
+            position: relative;
+            z-index: 10;
+            animation: floatPet 6s ease-in-out infinite;
+        }
+
+        @keyframes floatPet {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Loading spinner para o botão */
+        .spinner {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 3px solid rgba(0,0,0,0.2);
+            border-top-color: #050C33;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center relative">
+
+    <div class="w-full h-screen flex flex-col md:flex-row relative z-10 overflow-hidden">
+        
+        <div class="w-full md:w-1/2 h-[30%] md:h-full relative flex items-end justify-center md:items-center p-4">
+            <div class="blob-bg blob-1"></div>
+            <div class="blob-bg blob-2"></div>
+            
+            <div class="pet-container w-44 sm:w-72 md:w-96 lg:w-[550px] aspect-square flex items-center justify-center">
+                <img 
+                    src="/static/gato.png" 
+                    alt="Mascote Gato Clínica Formosão" 
+                    class="w-full h-full object-contain drop-shadow-2xl"
+                >
+            </div>
+        </div>
+
+        <div class="w-full md:w-1/2 h-[70%] md:h-full flex flex-col items-center justify-center px-6 py-4 relative z-20">
+            
+            <div class="w-full max-w-sm flex flex-col items-center">
+                
+                <div class="mb-2 w-full flex justify-center items-center min-h-[140px]">
+                    <img 
+                        src="/static/logo.png" 
+                        alt="Logotipo da Clínica" 
+                        class="max-w-[380px] h-48 object-contain"
+                    >
+                </div>
+
+                <div id="errorMsg" class="hidden w-full bg-red-500/20 border border-red-500 text-red-200 text-xs font-bold px-4 py-2.5 rounded-2xl mb-3 text-center">
+                    Erro ao realizar cadastro.
+                </div>
+
+                <form id="formCadastro" onsubmit="return realizarCadastro(event)" class="w-full flex flex-col items-center">
+                    
+                    <div class="w-full mb-3 flex flex-col items-center">
+                        <label for="nome" class="text-white font-bold text-sm mb-1">Nome Completo:</label>
+                        <input 
+                            type="text" 
+                            id="nome" 
+                            name="nome" 
+                            placeholder="Seu nome"
+                            class="input-field w-full h-10 rounded-full px-6 text-center text-base font-semibold transition-all"
+                            required
+                        >
+                    </div>
+
+                    <div class="w-full mb-3 flex flex-col items-center">
+                        <label for="email" class="text-white font-bold text-sm mb-1">E-mail (Será seu Login):</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="seuemail@clinica.com"
+                            class="input-field w-full h-10 rounded-full px-6 text-center text-base font-semibold transition-all"
+                            required
+                        >
+                    </div>
+
+                    <div class="w-full mb-3 flex flex-col items-center">
+                        <label for="senha" class="text-white font-bold text-sm mb-1">Senha:</label>
+                        <input 
+                            type="password" 
+                            id="senha" 
+                            name="senha" 
+                            placeholder="••••••••"
+                            class="input-field w-full h-10 rounded-full px-6 text-center text-base font-semibold transition-all"
+                            required
+                        >
+                    </div>
+
+                    <div class="w-full mb-5 flex flex-col items-center">
+                        <label for="confirmar_senha" class="text-white font-bold text-sm mb-1">Confirmar Senha:</label>
+                        <input 
+                            type="password" 
+                            id="confirmar_senha" 
+                            name="confirmar_senha" 
+                            placeholder="••••••••"
+                            class="input-field w-full h-10 rounded-full px-6 text-center text-base font-semibold transition-all"
+                            required
+                        >
+                    </div>
+
+                    <button 
+                        id="btnCadastrar"
+                        type="submit"
+                        class="bg-[#dfccff] hover:bg-[#d0b8f9] text-black font-extrabold text-base w-44 h-11 rounded-full shadow-lg transition-transform transform hover:scale-105 mb-3 flex items-center justify-center"
+                    >
+                        Cadastrar
+                    </button>
+
+                    <button 
+                        type="button" 
+                        onclick="window.location.href='/'"
+                        class="bg-[#1f00a5] hover:bg-[#150073] text-white font-bold text-base w-44 h-11 rounded-full shadow-lg transition-transform transform hover:scale-105"
+                    >
+                        Voltar ao Login
+                    </button>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function realizarCadastro(event) {
+            event.preventDefault();
+
+            const nomeInput = document.getElementById('nome');
+            const emailInput = document.getElementById('email');
+            const senhaInput = document.getElementById('senha');
+            const confirmarInput = document.getElementById('confirmar_senha');
+            const btn = document.getElementById('btnCadastrar');
+            const erro = document.getElementById('errorMsg');
+
+            // Limpa estados de erro anteriores
+            erro.classList.add('hidden');
+            [nomeInput, emailInput, senhaInput, confirmarInput].forEach(i => i.classList.remove('error'));
+
+            // Validação de senhas iguais
+            if (senhaInput.value !== confirmarInput.value) {
+                erro.innerText = "As senhas não coincidem!";
+                erro.classList.remove('hidden');
+                senhaInput.classList.add('error');
+                confirmarInput.classList.add('error');
+                return false;
+            }
+
+            // Ativa animação de carregamento
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Cadastrando...';
+
+            try {
+                const res = await fetch('/cadastrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nome: nomeInput.value,
+                        email: emailInput.value,
+                        senha: senhaInput.value
+                    })
+                });
+
+                if (res.ok) {
+                    btn.innerHTML = '✓ Concluído!';
+                    btn.classList.add('bg-green-400');
+                    setTimeout(() => { 
+                        window.location.href = '/'; // Redireciona para a rota correta de login do FastAPI
+                    }, 1200);
+                } else {
+                    const data = await res.json();
+                    throw new Error(data.detail || 'Erro ao realizar cadastro.');
+                }
+            } catch (e) {
+                erro.innerText = e.message || "Erro de conexão. Tente novamente.";
+                erro.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = 'Cadastrar';
+            }
+
+            return false;
+        }
+    </script>
+</body>
+</html>
