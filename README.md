@@ -36,3 +36,7 @@ dinâmicos de linhas para o acompanhamento volumétrico semanal de agendamentos 
 na clínica, consolidando um sistema robusto, escalável e pronto para o uso cotidiano.
 
 
+
+![Cowboy Bebop Eating GIF](https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTlibmtjNHl0MWtodzVkN29rdjRrM3l6cHo5ZDh2ZDByNjUxMjRqMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/11KzOet1ElBDz2/giphy.gif)
+
+Obrigado por conferir meu codigo!!!
