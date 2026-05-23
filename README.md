@@ -34,9 +34,3 @@ API Fetch, que realiza o mapeamento automático dos formulários em objetos JSON
 de exceções. Por fim, para fornecer uma visão analítica e gerencial dos dados da clínica ao administrador, integramos a biblioteca Chart.js, alimentando gráficos
 dinâmicos de linhas para o acompanhamento volumétrico semanal de agendamentos e gráficos de rosca para a distribuição estatística percentual das espécies atendidas 
 na clínica, consolidando um sistema robusto, escalável e pronto para o uso cotidiano.
-
-
-
-![Cowboy Bebop Eating GIF](https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTlibmtjNHl0MWtodzVkN29rdjRrM3l6cHo5ZDh2ZDByNjUxMjRqMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/11KzOet1ElBDz2/giphy.gif)
-
-Obrigado por conferir meu codigo!!!
