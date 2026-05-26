@@ -34,3 +34,35 @@ API Fetch, que realiza o mapeamento automático dos formulários em objetos JSON
 de exceções. Por fim, para fornecer uma visão analítica e gerencial dos dados da clínica ao administrador, integramos a biblioteca Chart.js, alimentando gráficos
 dinâmicos de linhas para o acompanhamento volumétrico semanal de agendamentos e gráficos de rosca para a distribuição estatística percentual das espécies atendidas 
 na clínica, consolidando um sistema robusto, escalável e pronto para o uso cotidiano.
+
+
+
+
+
+
+
+
+Dr. Ricardo Monteiro	Cardiologia Veterinária	A
+Dra. Fernanda Alves	Neurologia Veterinária	A
+Dr. Gustavo Linhares	Oncologia Animal	A
+Dra. Camila Rezende	Dermatologia Veterinária	A
+Dr. Felipe Navarro	Oftalmologia Animal	A
+Dra. Juliana Prado	Endocrinologia Veterinária	A
+Dr. Leonardo Martins	Cirurgia Avançada	A
+Veterinários — Nível B (Intermediário)
+Nome	Especialidade	Nível
+Dra. Bianca Torres	Clínica Geral	B
+Dr. Rafael Costa	Ortopedia Veterinária	B
+Dra. Marina Farias	Nutrição Animal	B
+Dr. Eduardo Nunes	Fisioterapia Animal	B
+Dra. Vanessa Lima	Ultrassonografia	B
+Dr. Bruno Siqueira	Exames Laboratoriais	B
+Dra. Patrícia Moura	Internação Veterinária	B
+Veterinários — Nível C (Júnior / Atendimento Geral)
+Nome	Especialidade	Nível
+Dr. Lucas Ferreira	Vacinação Animal	C
+Dra. Amanda Ribeiro	Clínica Preventiva	C
+Dr. Thiago Barros	Atendimento Geral	C
+Dra. Letícia Gomes	Emergência Veterinária	C
+Dr. Caio Menezes	Castração e Pequenos Procedimentos	C
+Dra. Renata Souza	Atendimento Ambulatorial	C
