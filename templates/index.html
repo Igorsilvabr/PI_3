@@ -175,6 +175,30 @@
         <h2 class="text-2xl font-black text-black uppercase">Agenda Diária</h2>
         <button onclick="openModal('modalAddAgendamento')" class="btn-add px-6 py-3 text-sm shadow-lg">+ Novo Agendamento</button>
       </div>
+      
+      <div class="white-panel p-8 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+          <div class="col-span-1 md:col-span-2">
+            <label class="block text-sm font-black mb-3 ml-2 uppercase text-slate-700">Buscar por Paciente</label>
+            <input type="text" id="buscaAgendaNome" placeholder="Nome do pet..." class="input-custom w-full h-12">
+          </div>
+          <div>
+            <label class="block text-sm font-black mb-3 ml-2 uppercase text-slate-700">Filtrar por Status</label>
+            <select id="buscaAgendaStatus" class="input-custom w-full h-12">
+              <option value="">Todos os status...</option>
+              <option value="agendado">Agendado</option>
+              <option value="aguardando">Aguardando</option>
+              <option value="finalizado">Finalizado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="flex gap-3 h-12">
+            <button onclick="filtrarAgenda()" class="btn-marinho flex-1 uppercase text-xs tracking-widest shadow-md">Filtrar</button>
+            <button onclick="limparFiltrosAgenda()" class="btn-lavanda flex-1 uppercase text-xs tracking-widest shadow-md">Limpar</button>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 gap-4" id="agenda-container"></div>
     </section>
  
@@ -395,9 +419,15 @@
       </div>
       <form onsubmit="salvarDados(event, '/agendamentos/', 'modalAddAgendamento', carregarAgenda)">
         <div class="space-y-5">
-          <div>
-            <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Horário</label>
-            <input type="time" name="horario" required class="input-custom w-full">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Data</label>
+              <input type="date" name="data" required class="input-custom w-full">
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Horário</label>
+              <input type="time" name="horario" required class="input-custom w-full">
+            </div>
           </div>
           <div>
             <label class="block text-xs font-black text-slate-500 mb-2 uppercase tracking-widest">Paciente (Pet)</label>
@@ -428,7 +458,6 @@
   </div>
  
  <script>
-    // ── DICIONÁRIO DE RAÇAS PREDEFINIDAS ──────────────────────
     const baseRacas = {
       "Cão": ["Vira-lata (SRD)", "Poodle", "Labrador", "Golden Retriever", "Pastor Alemão", "Bulldog", "Chihuahua", "Pinscher", "Shih Tzu", "Yorkshire", "Outra Raça"],
       "Gato": ["Semedo (SRD)", "Persa", "Siamês", "Maine Coon", "Angorá", "Sphynx", "Bengal", "Outra Raça"],
@@ -450,7 +479,6 @@
       }
     }
  
-    // ── NAVEGAÇÃO DE TELAS E ABAS ──────────────────────────────
     function showSection(sectionId) {
       document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
       document.querySelectorAll('.btn-sidebar').forEach(btn => btn.classList.remove('active'));
@@ -473,7 +501,6 @@
       document.getElementById('panel-' + tabId).classList.add('active');
     }
  
-    // ── MODAL WINDOW CONTROLLERS ──────────────────────────────
     function openModal(id) {
       document.getElementById(id).style.display = 'flex';
       if (id === 'modalAddPaciente') {
@@ -490,12 +517,11 @@
       if (form) form.reset();
     }
  
-    // ── VARIÁVEIS GLOBAIS DE CONTROLE DE GRÁFICOS ──────────────
     let instanceChartArea = null;
     let instanceChartDonut = null;
     let dadosLocaisPacientes = [];
+    let dadosLocaisAgenda = [];
  
-    // ── REQUISIÇÕES DA API (GET & POST) ───────────────────────
     async function apiFetch(endpoint) {
       try {
         const response = await fetch(endpoint);
@@ -507,14 +533,12 @@
       }
     }
  
-    // FUNÇÃO ATUALIZADA: Mapeia dados dinamicamente do HTML para o formato do SQLAlchemy (Evita Erro 422)
     async function salvarDados(event, url, modalId, callbackAtualizacao) {
       event.preventDefault();
       const form = event.target;
       const formData = new FormData(form);
       let payload = Object.fromEntries(formData.entries());
  
-      // Conversões e compatibilidades para o módulo de Animais/Pacientes
       if (url.includes('/animais/')) {
           if (payload.petEspecie) payload.especie = payload.petEspecie;
           if (payload.petRaca) payload.raca = payload.petRaca;
@@ -543,7 +567,6 @@
       }
     }
  
-    // ── CARREGAMENTO DE DROPDOWNS DINÂMICOS ───────────────────
     async function carregarSelectTutores() {
       const tutores = await apiFetch('/tutores/');
       const select = document.getElementById('pacienteTutor');
@@ -579,7 +602,6 @@
       }
     }
  
-    // ── PREENCHIMENTO E RENDERIZAÇÃO DE TABELAS ────────────────
     async function carregarPacientes() {
       const dados = await apiFetch('/animais/');
       if (!dados) return;
@@ -590,14 +612,17 @@
     function renderizarTabelaPacientes(lista) {
       const tbody = document.getElementById('tabela-pacientes');
       if (!tbody) return;
+
       tbody.innerHTML = lista.map(p => `
-        <tr class="hover:bg-slate-50/80 transition cursor-pointer" onclick="openFicha(${p.id})">
+        <tr class="hover:bg-slate-50/80 transition cursor-pointer" onclick="openFicha('${p.id}')">
           <td class="px-8 py-5 font-black text-indigo-950">${p.nome}</td>
           <td class="px-8 py-5 text-sm text-slate-600 font-medium">${p.especie} <span class="text-xs text-slate-400">(${p.raca || 'SRD'})</span></td>
           <td class="px-8 py-5 text-sm font-bold text-slate-500">${p.sexo || 'Não informado'}</td>
           <td class="px-8 py-5 text-sm font-semibold text-slate-700">${p.dono}</td>
           <td class="px-8 py-5 text-center" onclick="event.stopPropagation()">
-            <button onclick="deletarItem('/animais/${p.id}', carregarPacientes)" class="text-red-400 hover:text-red-600 font-bold text-xs uppercase tracking-wider">Remover</button>
+            <button onclick="deletarItem('/animais/${p.id}/', carregarPacientes)" class="text-red-400 hover:text-red-600 font-bold text-xs uppercase tracking-wider">
+              Remover
+            </button>
           </td>
         </tr>
       `).join('');
@@ -624,17 +649,23 @@
       const tutores = await apiFetch('/tutores/');
       const grid = document.getElementById('grid-tutores');
       if (!grid || !tutores) return;
+
       grid.innerHTML = tutores.map(t => `
         <div class="white-panel p-6 flex flex-col justify-between border border-slate-100 relative">
           <div>
-            <div class="initials-circle">${t.nome.substring(0,2)}</div>
+            <div class="initials-circle">${t.nome.substring(0, 2)}</div>
             <h4 class="text-lg font-black text-center text-indigo-950 uppercase tracking-tight mb-1">${t.nome}</h4>
             <p class="text-xs text-center text-slate-400 font-bold mb-4">${t.telefone}</p>
             <div class="border-t border-slate-50 pt-4 space-y-2">
-              <p class="text-xs font-medium text-slate-500"><span class="font-black text-slate-400 uppercase text-[9px] block">Pets Vinculados</span> ${t.pets || 'Nenhum'}</p>
+              <p class="text-xs font-medium text-slate-500">
+                <span class="font-black text-slate-400 uppercase text-[9px] block">Pets Vinculados</span> 
+                ${t.pets || 'Nenhum'}
+              </p>
             </div>
           </div>
-          <button onclick="deletarItem('/tutores/${t.id}', carregarTutores)" class="mt-6 text-center text-xs font-bold text-red-400 hover:text-red-600 uppercase tracking-widest">Excluir Cadastro</button>
+          <button onclick="deletarItem('/tutores/${t.id}/', carregarTutores)" class="mt-6 text-center text-xs font-bold text-red-400 hover:text-red-600 uppercase tracking-widest">
+            Excluir Cadastro
+          </button>
         </div>
       `).join('');
     }
@@ -672,13 +703,26 @@
  
     async function carregarAgenda() {
       const agenda = await apiFetch('/agendamentos/');
+      if (!agenda) return;
+      dadosLocaisAgenda = agenda;
+      renderizarAgenda(dadosLocaisAgenda);
+    }
+ 
+    function renderizarAgenda(lista) {
       const container = document.getElementById('agenda-container');
-      if (!container || !agenda) return;
+      if (!container) return;
       
-      container.innerHTML = agenda.map(a => `
+      container.innerHTML = lista.map(a => {
+        // Formata a data recebida (AAAA-MM-DD) para o padrao brasileiro (DD/MM/AAAA)
+        const dataFormatada = a.data ? a.data.split('-').reverse().join('/') : '--/--/----';
+        
+        return `
         <div class="white-panel p-5 flex flex-col md:flex-row justify-between items-center agenda-card border-l-8 status-${a.status || 'agendado'}">
           <div class="flex items-center gap-6 w-full md:w-auto">
-            <div class="text-xl font-black text-indigo-950 bg-slate-100/80 px-4 py-2 rounded-xl border border-slate-200">${a.horario}</div>
+            <div class="text-center bg-slate-100/80 px-4 py-2 rounded-xl border border-slate-200 min-w-[100px]">
+              <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider">${dataFormatada}</div>
+              <div class="text-xl font-black text-indigo-950">${a.horario}</div>
+            </div>
             <div>
               <h4 class="font-black text-lg text-indigo-950 uppercase">${a.nome_pet}</h4>
               <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">${a.motivo} ── <span class="text-indigo-900">Dr(a). ${a.veterinario}</span></p>
@@ -694,7 +738,24 @@
             <button onclick="deletarItem('/agendamentos/${a.id}', carregarAgenda)" class="text-slate-300 hover:text-red-500 transition p-2">&times;</button>
           </div>
         </div>
-      `).join('');
+      `; }).join('');
+    }
+ 
+    function filtrarAgenda() {
+      const busca = document.getElementById('buscaAgendaNome').value.toLowerCase();
+      const status = document.getElementById('buscaAgendaStatus').value;
+      const filtrados = dadosLocaisAgenda.filter(a => {
+        const bateNome = a.nome_pet.toLowerCase().includes(busca);
+        const bateStatus = status === "" || (a.status || 'agendado') === status;
+        return bateNome && bateStatus;
+      });
+      renderizarAgenda(filtrados);
+    }
+ 
+    function limparFiltrosAgenda() {
+      document.getElementById('buscaAgendaNome').value = "";
+      document.getElementById('buscaAgendaStatus').value = "";
+      renderizarAgenda(dadosLocaisAgenda);
     }
  
     async function atualizarStatusAgenda(id, novoStatus) {
@@ -707,16 +768,39 @@
     }
  
     async function deletarItem(url, callbackSucesso) {
-      if (!confirm("Tem certeza que deseja remover este item permanentemente do sistema?")) return;
+      const confirmar = confirm("Tem certeza que deseja remover este item?");
+
+      if (!confirmar) return;
+
       try {
-        const res = await fetch(url, { method: 'DELETE' });
-        if (res.ok) callbackSucesso();
-      } catch (e) {
-        console.error("Erro ao remover item:", e);
+        const resposta = await fetch(url, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (resposta.ok) {
+          alert('Item removido com sucesso!');
+
+          if (callbackSucesso) {
+            callbackSucesso();
+          }
+
+        } else {
+          const erroTexto = await resposta.text();
+
+          console.error('Erro DELETE:', erroTexto);
+
+          alert('Erro ao remover item do sistema.');
+        }
+
+      } catch (erro) {
+        console.error('Erro na requisição DELETE:', erro);
+        alert('Erro de conexão com o servidor.');
       }
     }
  
-    // ── FICHA CLÍNICA & HISTÓRICO DO ANIMAL ───────────────────
     async function openFicha(petId) {
       const pet = await apiFetch(`/animais/${petId}`);
       if (!pet) return;
@@ -742,7 +826,7 @@
       try {
         const res = await fetch(`/animais/${id}/prontuario?prontuario=${encodeURIComponent(texto)}`, { method: 'PUT' });
         if (res.ok) {
-          alert("Prontuário updated com sucesso!");
+          alert("Prontuário atualizado com sucesso!");
           document.getElementById('modalFicha').style.display = 'none';
           carregarPacientes();
         }
@@ -751,7 +835,6 @@
       }
     }
  
-    // ── MOTOR E PROCESSADOR DE METRICAS (DASHBOARD) ───────────
     async function renderizarDashboard() {
       try {
         const [animais, tutores, agenda, servicos] = await Promise.all([
@@ -761,12 +844,10 @@
           apiFetch('/servicos/') || []
         ]);
  
-        // 1. Atualização dos Cards Numéricos Estáticos
         document.getElementById('dashAnimais').innerText = animais ? animais.length : 0;
         document.getElementById('dashTutores').innerText = tutores ? tutores.length : 0;
         document.getElementById('dashAtendimentos').innerText = agenda ? agenda.filter(a => a.status === 'finalizado').length : 0;
  
-        // 2. Mapeamento Inteligente de Faturamento
         let faturamentoTotal = 0;
         if (agenda && servicos) {
           agenda.forEach(ag => {
@@ -775,14 +856,13 @@
               if (correspondente) {
                 faturamentoTotal += correspondente.valor;
               } else {
-                faturamentoTotal += 150.00; // Fallback padrão caso o serviço tenha sido excluído
+                faturamentoTotal += 150.00;
               }
             }
           });
         }
         document.getElementById('dashFaturamento').innerText = `R$ ${faturamentoTotal.toFixed(2).replace('.', ',')}`;
  
-        // 3. Processamento de dados para o Gráfico de Rosca (Espécies)
         const contagemEspecies = {};
         if (animais) {
           animais.forEach(a => {
@@ -792,11 +872,9 @@
           });
         }
  
-        // Limpeza preventiva de gráficos anteriores
         if (instanceChartArea) instanceChartArea.destroy();
         if (instanceChartDonut) instanceChartDonut.destroy();
  
-        // 4. Renderização do Gráfico de Área (Evolução de Agenda)
         const ctxArea = document.getElementById('chartArea').getContext('2d');
         instanceChartArea = new Chart(ctxArea, {
           type: 'line',
@@ -818,7 +896,6 @@
           }
         });
  
-        // 5. Renderização do Gráfico Donut (Distribuição)
         const ctxDonut = document.getElementById('chartDonut').getContext('2d');
         const labelsDonut = Object.keys(contagemEspecies).length > 0 ? Object.keys(contagemEspecies) : ['Nenhum Pet'];
         const dataDonut = Object.values(contagemEspecies).length > 0 ? Object.values(contagemEspecies) : [0];
@@ -846,7 +923,6 @@
       }
     }
  
-    // ── INICIALIZAÇÃO DA SESSÃO WINDOW ────────────────────────
     window.onload = () => {
       showSection('pacientes');
       carregarPacientes();
